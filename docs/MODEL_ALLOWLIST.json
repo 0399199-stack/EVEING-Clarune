@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-09-16",
+  "status": "internal-poc-only",
+  "paidDistribution": "blocked-pending-weight-rights-confirmation-or-documented-legal-signoff",
+  "source": {
+    "project": "xinntao/Real-ESRGAN",
+    "releaseTag": "v0.2.5.0",
+    "asset": "realesrgan-ncnn-vulkan-20220424-windows.zip",
+    "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-windows.zip",
+    "archiveSha256": "abc02804e17982a3be33675e4d471e91ea374e65b70167abc09e31acb412802d"
+  },
+  "models": [
+    {
+      "id": "realesrgan-x4plus",
+      "purpose": "general images",
+      "scales": [4],
+      "files": [
+        { "path": "models/realesrgan-x4plus.bin", "size": 33424520, "sha256": "713ee713b0353afaa27976f0563a64a5043bd70b9bd8936c2e26e25ebcdbcddf" },
+        { "path": "models/realesrgan-x4plus.param", "size": 116029, "sha256": "35330ececcea33b6c397a72548e788d5d53becee4734c50b7fada36e89f10a86" }
+      ]
+    },
+    {
+      "id": "realesrgan-x4plus-anime",
+      "purpose": "anime images and illustrations",
+      "scales": [4],
+      "files": [
+        { "path": "models/realesrgan-x4plus-anime.bin", "size": 8943500, "sha256": "fe01c269cfd10cdef8e018ab66ebe750cf79c7af4d1f9c16c737e1295229bacc" },
+        { "path": "models/realesrgan-x4plus-anime.param", "size": 30290, "sha256": "2b8fb6e0ae4d2d85704ca08c119a2f5ea40add4f2ecd512eb7f4cd44b6127ed4" }
+      ]
+    },
+    {
+      "id": "realesr-animevideov3",
+      "purpose": "anime video frames; optional image preset",
+      "scales": [2, 3, 4],
+      "files": [
+        { "path": "models/realesr-animevideov3-x2.bin", "size": 1247368, "sha256": "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d" },
+        { "path": "models/realesr-animevideov3-x2.param", "size": 3173, "sha256": "b88ff4f00ebf019a7fdac17fdd45a7fd3665d37509efc5baf2e4da2e24420a04" },
+        { "path": "models/realesr-animevideov3-x3.bin", "size": 1247368, "sha256": "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d" },
+        { "path": "models/realesr-animevideov3-x3.param", "size": 3173, "sha256": "d1a5755008791d09b57e3425fc9dd0bd26b00fdf79c606210bc0e693f8230881" },
+        { "path": "models/realesr-animevideov3-x4.bin", "size": 1247368, "sha256": "548a36f9c3f4ab8da56cd3b13badf23968bee207b396dad14d04b830e5f2ab2d" },
+        { "path": "models/realesr-animevideov3-x4.param", "size": 3077, "sha256": "850a248e7c14c27e5bd8cf7265113a9441036a7db63963bb8aa5169d788a435e" }
+      ]
+    }
+  ],
+  "excluded": [
+    "remacri-4x",
+    "ultramix-balanced-4x",
+    "ultrasharp-4x",
+    "upscayl-standard-4x",
+    "upscayl-lite-4x",
+    "digital-art-4x",
+    "high-fidelity-4x"
+  ]
+}

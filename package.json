@@ -1,0 +1,36 @@
+{
+  "name": "eveing-clarune",
+  "version": "0.0.1-phase0",
+  "private": true,
+  "description": "EVEING Clarune clean-room Windows image enhancement desktop app",
+  "main": "./out/main/index.js",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "pnpm typecheck && electron-vite build",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "i18next": "26.4.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-i18next": "17.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "electron": "44.4.1",
+    "electron-vite": "5.0.0",
+    "typescript": "6.0.3",
+    "vite": "7.3.6",
+    "vitest": "5.0.1"
+  }
+}
+
