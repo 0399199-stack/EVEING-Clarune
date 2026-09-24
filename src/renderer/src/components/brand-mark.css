@@ -1,0 +1,13 @@
+.clarune-brand-image {
+  display: block;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 5px 9px rgba(57, 143, 211, 0.2));
+  user-select: none;
+}
+
+.clarune-brand-image.is-large {
+  width: 58px;
+  height: 58px;
+}

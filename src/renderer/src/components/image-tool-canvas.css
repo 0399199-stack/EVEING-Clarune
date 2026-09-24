@@ -1,0 +1,49 @@
+.image-tool-canvas { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 180px; }
+.tool-image-surface.image-tool-viewport { display: block; min-height: 135px; outline-offset: -3px; touch-action: none; user-select: none; cursor: grab; }
+.image-tool-viewport.mode-crop { cursor: crosshair; }
+.image-tool-viewport.mode-watermark { cursor: default; }
+.image-tool-viewport.space-held { cursor: grab; }
+.image-tool-viewport.dragging-pan { cursor: grabbing; }
+.tool-image-stage.image-tool-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; transition: none; will-change: transform; }
+.image-tool-stage > img { pointer-events: none; }
+.image-tool-stage .image-tool-crop { border-width: calc(1px * var(--inverse-zoom)); pointer-events: auto; cursor: move; }
+.image-tool-crop:focus-visible { outline: calc(2px * var(--inverse-zoom)) solid #3cbcff; outline-offset: calc(-4px * var(--inverse-zoom)); }
+.image-tool-crop-handle { position: absolute; width: calc(16px * var(--inverse-zoom)); height: calc(16px * var(--inverse-zoom)); padding: 0; border: calc(3px * var(--inverse-zoom)) solid white; background: transparent; border-radius: 0; touch-action: none; }
+.image-tool-crop-handle.corner-top-left { left: 0; top: 0; border-right: 0; border-bottom: 0; cursor: nwse-resize; }
+.image-tool-crop-handle.corner-top-right { right: 0; top: 0; border-left: 0; border-bottom: 0; cursor: nesw-resize; }
+.image-tool-crop-handle.corner-bottom-left { left: 0; bottom: 0; border-right: 0; border-top: 0; cursor: nesw-resize; }
+.image-tool-crop-handle.corner-bottom-right { right: 0; bottom: 0; border-left: 0; border-top: 0; cursor: nwse-resize; }
+.image-tool-crop-handle:focus-visible { outline: calc(2px * var(--inverse-zoom)) solid #3cbcff; outline-offset: calc(2px * var(--inverse-zoom)); }
+.image-tool-viewport.space-held .image-tool-crop, .image-tool-viewport.space-held .image-tool-crop-handle { cursor: grab; }
+.image-tool-live-watermark, .image-tool-watermark-clip { position: absolute; inset: 0; pointer-events: none; }
+.image-tool-live-watermark > img { display: block; width: 100%; height: 100%; }
+.image-tool-watermark-clip { overflow: hidden; }
+.image-tool-watermark-clip > img { position: absolute; display: block; }
+.image-tool-margin-guide { position: absolute; border: calc(1px * var(--inverse-zoom)) dashed rgba(55,184,242,.85); box-shadow: 0 0 0 calc(1px * var(--inverse-zoom)) rgba(255,255,255,.55); pointer-events: none; }
+.image-tool-stage .image-tool-crop > span { font-size: calc(11px * var(--inverse-zoom)); padding: calc(5px * var(--inverse-zoom)) calc(10px * var(--inverse-zoom)); border-radius: calc(8px * var(--inverse-zoom)); bottom: calc(9px * var(--inverse-zoom)); pointer-events: none; }
+.image-tool-watermark { position: absolute; border: calc(1.5px * var(--inverse-zoom)) solid #54caff; background: rgba(104,208,255,.09); box-shadow: 0 0 0 calc(1px * var(--inverse-zoom)) rgba(255,255,255,.85); cursor: move; touch-action: none; }
+.image-tool-watermark.is-draft { border-style: dashed; background: rgba(104,208,255,.19); }
+.image-tool-watermark.is-busy { cursor: progress; }
+.image-tool-viewport.space-held .image-tool-watermark { cursor: grab; }
+.image-tool-watermark > span { position: absolute; left: 0; top: 0; font-size: calc(10px * var(--inverse-zoom)); line-height: 1.5; padding: calc(2px * var(--inverse-zoom)) calc(5px * var(--inverse-zoom)); white-space: nowrap; color: #fff; background: rgba(18,85,124,.80); border-bottom-right-radius: calc(5px * var(--inverse-zoom)); pointer-events: none; }
+.image-tool-watermark.label-above > span { top: auto; bottom: 100%; margin-bottom: calc(3px * var(--inverse-zoom)); border-radius: calc(5px * var(--inverse-zoom)); }
+.image-tool-watermark.label-below > span { top: 100%; margin-top: calc(3px * var(--inverse-zoom)); border-radius: calc(5px * var(--inverse-zoom)); }
+.image-tool-watermark.label-align-right > span { left: auto; right: 0; }
+.image-tool-watermark > i { position: absolute; width: calc(5px * var(--inverse-zoom)); height: calc(5px * var(--inverse-zoom)); background: #fff; border: calc(1px * var(--inverse-zoom)) solid #54baff; pointer-events: none; }
+.image-tool-watermark > i:nth-of-type(1) { left: 0; top: 0; }
+.image-tool-watermark > i:nth-of-type(2) { right: 0; top: 0; }
+.image-tool-watermark > i:nth-of-type(3) { left: 0; bottom: 0; }
+.image-tool-watermark > i:nth-of-type(4) { right: 0; bottom: 0; }
+.image-tool-zoom-bar { display: flex; justify-content: space-between; align-items: center; flex: none; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--glass-control); }
+.image-tool-zoom-bar > small { font-size: 11px; line-height: 1.4; color: var(--muted); }
+.image-tool-zoom-controls { display: flex; align-items: center; flex: none; gap: 3px; padding: 3px; border-radius: 12px; border: 1px solid var(--glass-highlight); background: var(--glass-selected); box-shadow: var(--shadow-control); }
+.image-tool-zoom-controls button { display: grid; place-items: center; min-width: 26px; height: 28px; padding: 0 5px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font-size: 16px; cursor: pointer; transition: background 160ms, transform 160ms; }
+.image-tool-zoom-controls button:hover { background: var(--glass-control); }
+.image-tool-zoom-controls button:active { transform: scale(.92); }
+.image-tool-zoom-controls button.zoom-text { font-size: 11px; white-space: nowrap; }
+.image-tool-zoom-controls label { display: flex; gap: 1px; align-items: center; font-size: 11px; color: var(--text); }
+.image-tool-zoom-controls input { appearance: textfield; width: 45px; padding: 4px 1px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text); font: inherit; text-align: right; font-variant-numeric: tabular-nums; }
+.image-tool-zoom-controls input:focus { border-color: var(--line); background: var(--glass-control); outline-offset: 1px; }
+.image-tool-zoom-controls input::-webkit-inner-spin-button, .image-tool-zoom-controls input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+@media (max-width: 1160px) { .image-tool-zoom-bar { justify-content: center; flex-wrap: wrap; gap: 4px; } .image-tool-zoom-bar > small { font-size: 10px; } }
+@media (prefers-reduced-motion: reduce) { .image-tool-zoom-controls button { transition: none; } }

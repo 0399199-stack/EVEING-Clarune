@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="body" x1="35" y1="10" x2="217" y2="245" gradientUnits="userSpaceOnUse"><stop stop-color="#677FE9"/><stop offset=".5" stop-color="#559EDE"/><stop offset="1" stop-color="#5CD5C7"/></linearGradient>
+    <linearGradient id="rim" x1="61" y1="5" x2="190" y2="248" gradientUnits="userSpaceOnUse"><stop stop-color="#fff" stop-opacity=".82"/><stop offset=".45" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#B6F9FF" stop-opacity=".6"/></linearGradient>
+    <linearGradient id="plate" x1="65" y1="70" x2="182" y2="154" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF" stop-opacity=".6"/><stop offset="1" stop-color="#FFF" stop-opacity=".08"/></linearGradient>
+  </defs>
+  <rect x="5" y="5" width="246" height="246" rx="69" fill="url(#body)"/>
+  <rect x="7" y="7" width="242" height="242" rx="67" fill="none" stroke="url(#rim)" stroke-width="4"/>
+  <g stroke="#FFF" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <path d="m61 159 67 39 67-39" fill="none" stroke-opacity=".62"/>
+    <path d="m61 131 67 39 67-39" fill="none" stroke-opacity=".83"/>
+    <path d="m61 103 67-39 67 39-67 39Z" fill="url(#plate)"/>
+  </g>
+</svg>

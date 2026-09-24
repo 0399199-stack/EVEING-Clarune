@@ -10,13 +10,13 @@ export function createWindowOptions(
     minWidth: 980,
     minHeight: 680,
     show: false,
-    backgroundColor: "#eef2f8",
+    backgroundColor: "#edf8ff",
     titleBarStyle: platform === "win32" ? "hidden" : "default",
     ...(platform === "win32"
       ? {
           titleBarOverlay: {
             color: "#00000000",
-            symbolColor: "#5a6578",
+            symbolColor: "#52708b",
             height: 44,
           },
           backgroundMaterial: "mica" as const,

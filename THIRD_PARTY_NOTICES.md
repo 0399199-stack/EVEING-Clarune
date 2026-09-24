@@ -1,12 +1,18 @@
 # Third-party notices / 第三方许可声明
 
-状态：**Phase 0 审计草案，仅供内部 PoC**。当前产品未随附任何推理 worker 或模型。本文件不是最终可发行的许可全文；公开或付费发行前必须根据最终安装包重新生成，并在安装目录和“关于 → 第三方许可”中提供每份所需的完整原文。
+状态：**1.0 发布候选，尚未宣称商业审核完成**。完整候选包通过 `tools/stage-ai-runtime.ps1` 整理独立 AI 环境，排除调试库及不需要的模型架构。实际第三方许可原文、来源和文件哈希随 `resources/ai` 清单与声明保存；本文件仅为说明索引，不代替完整许可。
 
 ## 当前应用依赖
 
 当前 `package.json` 固定 Electron、React、React DOM、i18next、react-i18next；Vite、electron-vite、TypeScript、Vitest 与类型包用于开发或构建。这些包的许可证及转依赖必须以最终锁文件和安装包生成 SBOM 后复核，不能仅靠此清单推定最终分发内容。
 
-## 候选推理链，尚未打包
+2026-09-17 本地工具修订新增 `sharp@0.35.4` 与 `pdf-lib@1.17.1`。预览打包时生成实际生产依赖索引 `resources/app/THIRD_PARTY_NOTICES.md`，并保留每个包的原始声明；详见 `docs/LOCAL_IMAGE_ENGINE.md`。Sharp Windows 原生包含 LGPL 组件，不将所有转依赖视作 MIT；收费发行前仍需按最终分发方式完成许可门禁。
+
+## 候选推理链
+
+`tools/stage-ai-runtime.ps1` 内含从 Spandrel 0.4.2 改编的 HAT 注册代码；源码分发时保留其 [MIT 原文](licenses/spandrel/LICENSE) 和修改标识，安装包另保留运行时的原始声明。
+
+v6 预览采用外部环境；1.0 候选改为完整离线运行目录。Spandrel 仅保留 HAT 及所需公共模块，不分发与本软件无关的非商业架构。各依赖和权重仍需按最终清单复核；本地运行成功不等同于许可放行。最新核查见项目同级 `EVEINGClarune_Release_Review/DEPENDENCY_AUDIT.md`，下表保留早期候选来源，实际包中版本以 staging manifest 为准。
 
 | 组件 | 版本与官方许可入口 | 发行时要保留的声明 |
 |---|---|---|

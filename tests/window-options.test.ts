@@ -17,7 +17,7 @@ describe("BrowserWindow security boundary", () => {
   it("uses native Windows glass material with a solid fallback color", () => {
     const options = createWindowOptions("C:\\app\\preload.js", "win32");
     expect(options.backgroundMaterial).toBe("mica");
-    expect(options.backgroundColor).toBe("#eef2f8");
+    expect(options.backgroundColor).toBe("#edf8ff");
     expect(options.transparent).not.toBe(true);
   });
 });

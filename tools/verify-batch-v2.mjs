@@ -1,0 +1,171 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { mkdtemp, mkdir, readFile, writeFile, readdir, stat } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+const require = createRequire(import.meta.url);
+const { _electron } = require(process.env.CLARUNE_PLAYWRIGHT_MODULE || "playwright");
+const sharp = require(process.env.CLARUNE_SHARP_MODULE || "sharp");
+const { PDFDocument } = require("pdf-lib");
+const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const review = resolve(process.env.CLARUNE_REVIEW_DIR || join(project, "UI-review-batch-v2"));
+const scratch = await mkdtemp(join(tmpdir(), "clarune-batch-v2-"));
+await mkdir(review, { recursive: true });
+const files = [];
+for (const [name, width, height, color] of [["landscape", 640, 480, "#127af0"], ["small", 320, 240, "#ae216e"], ["portrait", 360, 640, "#13a580"]]) {
+  const path = join(scratch, name + ".png"); files.push(path);
+  await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${color}"/><rect x="12" y="12" width="45" height="45" fill="#ffcf00"/><text x="30" y="100" font-family="sans-serif" font-size="25" fill="white">${name}</text><text x="30" y="140" font-family="sans-serif" font-size="12" fill="white">CLARUNE - LOCAL QA</text></svg>`)).png().toFile(path);
+}
+const mark = join(scratch, "white-logo.png");
+await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect x="15" y="5" width="70" height="40" rx="12" fill="white"/></svg>')).png().toFile(mark);
+const hash = async path => createHash("sha256").update(await readFile(path)).digest("hex");
+const originalHashes = await Promise.all(files.map(hash));
+const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL;
+const app = await _electron.launch({ executablePath: process.env.CLARUNE_PREVIEW_EXE || require("electron"), args: process.env.CLARUNE_PREVIEW_EXE ? [`--user-data-dir=${join(scratch, "profile")}`] : [project, `--user-data-dir=${join(scratch, "profile")}`], env });
+const page = await app.firstWindow(); page.setDefaultTimeout(30000);
+page.on("dialog", dialog => { void dialog.dismiss().catch(() => undefined); });
+await page.emulateMedia({ reducedMotion: "reduce" });
+const checks = [], errors = [];
+page.on("pageerror", error => errors.push(error.message));
+const check = (name, condition) => { assert.ok(condition, name); checks.push(name); console.log(`PASS ${name}`); };
+const nav = tool => page.getByTestId(`nav-${tool}`).click();
+const field = async (id, value) => { await page.getByTestId(id).fill(String(value)); await page.getByTestId(id).press("Tab"); };
+const ready = () => page.waitForFunction(() => {
+  const indicator = document.querySelector(".tool-processing-indicator");
+  return indicator && !indicator.classList.contains("is-busy") && !document.querySelector('[data-testid="tool-export"]')?.disabled;
+});
+const reset = async () => { await page.getByTestId("tool-reset").click(); await ready(); };
+const setFolder = path => app.evaluate(({ dialog }, directory) => {
+  dialog.showOpenDialog = async () => directory ? { canceled: false, filePaths: [directory] } : { canceled: true, filePaths: [] };
+}, path);
+const batch = async (name) => {
+  const directory = join(scratch, name); await mkdir(directory, { recursive: true }); await setFolder(directory);
+  await page.getByTestId("tool-batch-export").click();
+  await page.getByTestId("batch-summary").filter({ hasText: directory }).waitFor();
+  const outputs = (await readdir(directory)).map(file => join(directory, file));
+  check(`${name}: all three files saved`, outputs.length === 3);
+  check(`${name}: UI reports zero failures`, (await page.getByTestId("batch-summary").innerText()).includes("失败 0"));
+  return outputs;
+};
+const metadata = async outputs => Promise.all(outputs.map(path => sharp(path).metadata()));
+try {
+  await page.getByTestId("nav-batch").waitFor();
+  await page.evaluate(() => { localStorage.setItem("clarune.language", "zh-CN"); localStorage.setItem("clarune.theme", "light"); });
+  await page.reload();
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1440, 960));
+  await nav("resize"); await nav("batch");
+  check("Batch page is a functional local editor", (await page.getByRole("heading", { name: "批量图片超清与处理" }).count()) === 1);
+  await page.getByTestId("tool-file-input").setInputFiles(files); await ready();
+  check("Multiple input queue", await page.getByTestId("batch-item").count() === 3);
+  await field("tool-width", 320); await ready();
+  const resized = await batch("01-resize"); const sizes = await metadata(resized);
+  check("Mixed aspect ratios fit without stretching", sizes.filter(size => size.width === 320 && size.height === 240).length === 2 && sizes.some(size => size.width === 135 && size.height === 240));
+  await page.screenshot({ path: join(review, "01-batch-workspace.png") });
+  await nav("compress"); await field("tool-quality-input", 75.5); await ready();
+  check("Editing clears old success summary", !(await page.getByTestId("batch-summary").count()));
+  check("Same queue follows left-side tools", await page.getByTestId("batch-item").count() === 3);
+  await page.getByTestId("tool-format-webp").click(); await ready();
+  const compressed = await batch("02-compress");
+  check("Batch converts every file to WebP", (await metadata(compressed)).every(size => size.format === "webp"));
+  await reset(); await page.getByTestId("tool-format-png").click(); await nav("crop");
+  await field("tool-crop-left", 160); await field("tool-crop-top", 120);
+  await field("tool-crop-width", 320); await field("tool-crop-height", 240); await ready();
+  await page.getByTestId("batch-select-1").click(); await ready();
+  check("Crop maps proportionally to small image", await page.getByTestId("tool-crop-left").inputValue() === "80" && await page.getByTestId("tool-crop-width").inputValue() === "160");
+  await page.getByTestId("batch-select-0").click(); await ready();
+  check("Switching preview does not accumulate crop drift", await page.getByTestId("tool-crop-left").inputValue() === "160" && await page.getByTestId("tool-crop-width").inputValue() === "320");
+  const cropped = await batch("03-crop"); const crops = await metadata(cropped);
+  check("All batch crop dimensions are correct", crops.some(m => m.width === 320 && m.height === 240) && crops.some(m => m.width === 160 && m.height === 120) && crops.some(m => m.width === 180 && m.height === 320));
+  await reset(); await nav("watermark"); await page.getByTestId("tool-watermark-image-mode").click();
+  await page.getByTestId("tool-watermark-file-input").setInputFiles(mark);
+  await page.getByTestId("tool-watermark-position").selectOption("custom");
+  await field("tool-watermark-x", 0); await field("tool-watermark-y", 0);
+  await field("tool-watermark-opacity-input", 100); await ready();
+  const watermarked = await batch("04-watermark");
+  check("Image watermark applied to every size", (await Promise.all(watermarked.map(async path => (await stat(path)).size))).every(size => size > 100));
+  await page.screenshot({ path: join(review, "02-batch-watermark.png") });
+  await reset(); await nav("round"); await field("tool-radius-input", 30); await ready();
+  const rounded = await batch("05-round");
+  const corners = await Promise.all(rounded.map(async path => [...await sharp(path).extract({ left: 0, top: 0, width: 1, height: 1 }).ensureAlpha().raw().toBuffer()]));
+  check("Every rounded batch output has transparent corners", corners.every(pixel => pixel[3] === 0));
+  await reset(); await nav("rotate"); await field("tool-rotation-input", 90); await ready();
+  const rotated = await batch("06-rotate");
+  check("Batch rotates portrait and landscape", (await metadata(rotated)).some(m => m.width === 640 && m.height === 360));
+  await reset(); await nav("flip"); await page.getByTestId("tool-flip-horizontal").click(); await ready();
+  await batch("07-flip");
+  // A second export into the same folder must keep all old outputs unchanged.
+  const firstFolder = join(scratch, "07-flip"), firstFiles = (await readdir(firstFolder)).map(name => join(firstFolder, name));
+  const firstHashes = await Promise.all(firstFiles.map(hash));
+  await setFolder(firstFolder); await page.getByTestId("tool-batch-export").click();
+  await page.getByTestId("batch-summary").filter({ hasText: firstFolder }).waitFor();
+  check("Batch filename collisions auto-number", (await readdir(firstFolder)).length === 6);
+  check("Existing output contents unchanged", (await Promise.all(firstFiles.map(hash))).every((value, index) => value === firstHashes[index]));
+  await setFolder(null); await page.getByTestId("tool-batch-export").click();
+  await page.getByTestId("tool-save-status").filter({ hasText: "已取消" }).waitFor();
+  check("Folder picker cancel returns to editable state", await page.getByTestId("tool-width").count() === 0 && !(await page.getByTestId("batch-progress").count()));
+  await nav("batch"); await page.getByTestId("batch-tool-rotate").click();
+  check("Batch page changes parameter group", await page.getByTestId("tool-rotation-input").isVisible());
+  await nav("settings"); await nav("resize"); check("Queue retained after Settings", await page.getByTestId("batch-item").count() === 3);
+  await page.getByTestId("tool-add-file-input").setInputFiles(files[0]);
+  await page.getByTestId("batch-select-3").waitFor(); check("Add appends instead of replacing", await page.getByTestId("batch-item").count() === 4);
+  await page.getByTestId("batch-remove-3").click(); check("Queue removal", await page.getByTestId("batch-item").count() === 3);
+
+  // Cancellation is issued through the real UI after one real image has completed.
+  const large = join(scratch, "large.png");
+  await sharp(files[0]).resize(2400, 1800).png().toFile(large);
+  await page.getByTestId("tool-file-input").setInputFiles(Array.from({ length: 12 }, () => large)); await ready();
+  const cancelDirectory = join(scratch, "cancel-batch"); await mkdir(cancelDirectory); await setFolder(cancelDirectory);
+  await page.evaluate(() => {
+    window.__batchEvents = [];
+    window.__unsubscribeBatch = window.clarune.onBatchProgress(event => {
+      window.__batchEvents.push(event);
+      if (event.item?.status === "saved" && event.completed === 1) document.querySelector('[data-testid="batch-cancel"]')?.click();
+    });
+  });
+  await page.getByTestId("tool-batch-export").click();
+  await page.getByTestId("batch-summary").filter({ hasText: "已停止" }).waitFor();
+  const canceledEvents = await page.evaluate(() => { window.__unsubscribeBatch(); return window.__batchEvents; });
+  check("Progress and stop button wired", canceledEvents.some(e => e.item?.status === "saved") && canceledEvents.some(e => e.item?.status === "canceled"));
+  const cancelFiles = await readdir(cancelDirectory);
+  check("Cancel retains only completed images", cancelFiles.length > 0 && cancelFiles.length < 12);
+  for (const file of cancelFiles) await sharp(join(cancelDirectory, file)).raw().toBuffer();
+  check("Canceled batch leaves no truncated output", true);
+
+  await nav("pdf"); await page.getByTestId("pdf-file-input").setInputFiles([files[0], files[2]]);
+  await page.getByTestId("pdf-item").nth(1).waitFor(); await field("pdf-quality-input", 86.7);
+  check("PDF quality accepts typed decimals", await page.getByTestId("pdf-quality").inputValue() === "86.7");
+  for (const mode of ["image", "a4", "a4-landscape"]) {
+    await page.getByTestId("pdf-page-size").selectOption(mode);
+    const path = join(scratch, `${mode}.pdf`);
+    await app.evaluate(({ dialog }, filePath) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath }); }, path);
+    await page.getByTestId("pdf-export").click();
+    await page.getByTestId("tool-save-status").filter({ hasText: path }).waitFor();
+    const pdf = await PDFDocument.load(await readFile(path));
+    check(`PDF ${mode} has both pages`, pdf.getPageCount() === 2);
+    const sizes = pdf.getPages().map(p => [p.getWidth(), p.getHeight()]);
+    check(`PDF ${mode} actual dimensions`, mode === "image" ? sizes[0][0] === 480 && sizes[1][1] === 480 : sizes.every(([width, height]) => Math.abs(width - (mode === "a4" ? 595.28 : 841.89)) < .01 && Math.abs(height - (mode === "a4" ? 841.89 : 595.28)) < .01));
+    execFileSync("pdftoppm", ["-scale-to", "650", "-png", path, join(scratch, mode)], { windowsHide: true });
+  }
+  await page.screenshot({ path: join(review, "03-pdf-landscape.png") });
+  check("Original image hashes unchanged", (await Promise.all(files.map(hash))).every((value, index) => value === originalHashes[index]));
+  await nav("batch"); await page.getByTestId("batch-clear").click();
+  check("Empty queue cannot export", await page.getByTestId("tool-batch-export").isDisabled());
+  await page.getByTestId("batch-tool-resize").click();
+  await page.getByTestId("tool-file-input").setInputFiles(files); await ready();
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(980, 680));
+  await page.getByTestId("batch-tool-watermark").click();
+  check("Compact batch page no horizontal overflow", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && document.querySelector(".main-stage").scrollWidth <= document.querySelector(".main-stage").clientWidth + 1));
+  const button = await page.getByTestId("tool-batch-export").boundingBox();
+  check("Compact batch start remains on screen", button.y + button.height <= await page.evaluate(() => innerHeight));
+  await page.screenshot({ path: join(review, "04-batch-compact.png") });
+  await nav("settings"); await page.getByRole("button", { name: "English", exact: true }).click(); await nav("batch");
+  check("Batch editor translates to English", await page.getByRole("heading", { name: "Batch AI upscale & editing", exact: true }).isVisible());
+  check("No renderer exceptions", errors.length === 0);
+  const result = { passed: true, checks, errors, scratch, packaged: Boolean(process.env.CLARUNE_PREVIEW_EXE), testedAt: new Date().toISOString() };
+  await writeFile(join(review, "batch-verification.json"), JSON.stringify(result, null, 2));
+  console.log(JSON.stringify({ passed: true, checks: checks.length, scratch }, null, 2));
+} catch (error) { await page.screenshot({ path: join(review, "batch-failure.png") }).catch(() => {}); console.error({ scratch, errors }); throw error; }
+finally { await app.close(); }

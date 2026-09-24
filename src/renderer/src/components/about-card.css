@@ -1,0 +1,151 @@
+.clarune-about.glass-panel {
+  position: relative;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  align-items: start;
+  gap: 24px 36px;
+  border: 1px solid var(--glass-highlight);
+  border-bottom-color: var(--glass-edge);
+  background: var(--glass-surface);
+  box-shadow:
+    inset 0 1px 1px var(--glass-highlight),
+    inset 1px 0 1px var(--glass-reflection),
+    inset 0 -2px 2px var(--glass-reflection),
+    0 0 0 1px var(--line),
+    var(--shadow-soft);
+  backdrop-filter: blur(30px) saturate(145%);
+  -webkit-backdrop-filter: blur(30px) saturate(145%);
+}
+
+.clarune-about::after {
+  position: absolute;
+  right: 20px;
+  bottom: 1px;
+  left: 20px;
+  height: 2px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, var(--cyan) 20%, var(--glass-highlight) 47%, var(--cyan) 76%, transparent);
+  filter: blur(0.8px);
+  content: "";
+  pointer-events: none;
+}
+
+.clarune-about-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.clarune-about .clarune-about-heading h2 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.clarune-about-heading strong {
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+
+.clarune-about-heading p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.clarune-about-details {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 36px;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--glass-reflection);
+}
+
+.clarune-about-intro {
+  min-width: 0;
+  padding: 17px 20px;
+  border: 1px solid var(--glass-edge);
+  border-top-color: var(--glass-highlight);
+  border-radius: 16px;
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 var(--glass-highlight), var(--shadow-control);
+}
+
+.clarune-about-product {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px 12px;
+}
+
+.clarune-about-product h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+}
+
+.clarune-about-product > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.clarune-about-lead {
+  margin: 13px 0 5px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clarune-about-body {
+  max-width: 590px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+.clarune-about-tagline {
+  margin: 13px 0 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  opacity: 0.68;
+}
+
+.clarune-about .clarune-brand-image {
+  filter: drop-shadow(0 7px 9px rgba(64, 143, 203, 0.22));
+}
+
+@media (max-width: 1150px) {
+  .clarune-about.glass-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.clarune-about-details > div {
+  display: grid;
+  gap: 7px;
+}
+
+.clarune-about-details dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.clarune-about-details dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.clarune-about-email {
+  user-select: text;
+  cursor: text;
+}
