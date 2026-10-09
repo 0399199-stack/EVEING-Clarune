@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidatePattern('^EVEINGClarune_(?:Preview(?:_[A-Za-z0-9-]+)?|ReleaseCandidate)$')]
-    [string]$PreviewName = 'EVEINGClarune_Preview'
+    [string]$PreviewName = 'EVEINGClarune_Preview',
+    [string]$LicensePublicKeyPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -63,6 +64,13 @@ $previewBrandParent = Join-Path $previewApp 'resources'
 New-Item -ItemType Directory -Force -Path $previewBrandParent | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'resources/branding') -Destination $previewBrandParent -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'resources/realhat-worker.py') -Destination $previewResources -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'licenses') -Destination $previewApp -Recurse -Force
+if ($LicensePublicKeyPath) {
+    $publicKeySource = (Resolve-Path -LiteralPath $LicensePublicKeyPath).Path
+    & node -e "const fs=require('node:fs'),crypto=require('node:crypto'); const b=fs.readFileSync(process.argv[1]); if(b.length>4096||b.toString().includes('PRIVATE KEY')||!b.toString().includes('BEGIN PUBLIC KEY')||crypto.createPublicKey(b).asymmetricKeyType!=='ed25519') process.exit(1)" $publicKeySource
+    if ($LASTEXITCODE -ne 0) { throw 'An Ed25519 public key (never a private key) is required.' }
+    Copy-Item -LiteralPath $publicKeySource -Destination (Join-Path $previewResources 'license-public-key.pem') -Force
+}
 
 # Copy the true runtime dependency closure (including Sharp's Windows native binary), never the development tree.
 $previewModules = [IO.Path]::GetFullPath((Join-Path $previewApp 'node_modules'))

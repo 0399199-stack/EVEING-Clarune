@@ -4,6 +4,14 @@
 
 ## 当前应用依赖
 
+2026-10-09 新增抖音元数据解析适配器，改编自
+[`pwh-pwh/douyinVd` 的 `douyin.ts`](https://github.com/pwh-pwh/douyinVd/blob/6b8530817c0eb98217f37f291717abc6828f4a6b/douyin.ts)，
+固定完整提交 `6b8530817c0eb98217f37f291717abc6828f4a6b`，MIT © 2025 coderpwh。
+完整原文见 [`licenses/douyinVd/LICENSE`](licenses/douyinVd/LICENSE)，打包保留在
+`resources/app/licenses/douyinVd/LICENSE`。修改范围、未采用 Python 候选的
+README/许可冲突及真实联调状态见 [`docs/VIDEO_PARSER.md`](docs/VIDEO_PARSER.md)。
+未引入 Deno 服务、上游 GUI、远程解析网站或新增 npm 依赖。
+
 当前 `package.json` 固定 Electron、React、React DOM、i18next、react-i18next；Vite、electron-vite、TypeScript、Vitest 与类型包用于开发或构建。这些包的许可证及转依赖必须以最终锁文件和安装包生成 SBOM 后复核，不能仅靠此清单推定最终分发内容。
 
 2026-09-17 本地工具修订新增 `sharp@0.35.4` 与 `pdf-lib@1.17.1`。预览打包时生成实际生产依赖索引 `resources/app/THIRD_PARTY_NOTICES.md`，并保留每个包的原始声明；详见 `docs/LOCAL_IMAGE_ENGINE.md`。Sharp Windows 原生包含 LGPL 组件，不将所有转依赖视作 MIT；收费发行前仍需按最终分发方式完成许可门禁。

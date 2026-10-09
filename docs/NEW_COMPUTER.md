@@ -1,6 +1,6 @@
 # 新电脑接手开发
 
-1. 本人在新电脑安装 Git、Windows x64 Node.js 24（项目要求至少 24）及 pnpm 11.19.0；在 GitHub 官方登录页面或 GitHub CLI 交互流程自行完成登录、验证码和双重验证。不要把令牌或私钥贴到聊天、命令日志或仓库。确认目标仓库所有者与可见性后，再克隆 **EVEING-Clarune 源码仓库本身**，不要克隆或上传整个 Codex 工作目录。
+1. 本人在新电脑安装 Git、Windows x64 Node.js 24（项目要求至少 24）及 pnpm 11.19.0；从 `https://github.com/0399199-stack/EVEING-Clarune` 克隆 **EVEING-Clarune 源码仓库本身**，不要克隆或上传整个 Codex 工作目录。公开仓库的克隆不需登录；推送时在 GitHub 官方流程自行完成登录、验证码和双重验证。不要把令牌或私钥贴到聊天、命令日志或仓库。
 2. 在克隆的项目根目录运行 `pnpm install --frozen-lockfile`、`pnpm test`、`pnpm build` 和 `pnpm dev`。源码、锁文件、配置、测试与原创品牌资源应来自 Git；`node_modules`、`out` 和本地截图应重新生成。
 3. 不附带 AI 环境时，界面与普通源码构建仍可恢复，但 AI 推理会显示运行环境缺失；许可受限操作也需要本人的有效授权和与签发私钥匹配的**公钥**。不要把发行私钥搬进开发仓库。
 4. 如需恢复 AI，按 `EXTERNAL_ASSETS.md`、`PROVENANCE.md` 和 `tools/stage-ai-runtime.ps1` 找到经许可审核的来源、固定版本与哈希。开发模式当前默认查找工作区 `work/engine-baseline/runtime-full` 和 `work/realhat-face-test`，也可从软件设置选择受校验的本地运行环境。路径是假设，不保证任意克隆位置即插即用。

@@ -45,4 +45,7 @@ for (const name of Object.keys(manifest.dependencies ?? {})) await copyPackage(n
 const requiredNotices = ["sharp/LICENSE", "sharp/node_modules/@img/sharp-win32-x64/LICENSE", "sharp/node_modules/@img/sharp-win32-x64/README.md", "sharp/node_modules/@img/sharp-win32-x64/versions.json", "pdf-lib/LICENSE.md"];
 for (const path of requiredNotices) if (!(await stat(join(destination, path))).isFile()) throw new Error(`Missing packaged notice: ${path}`);
 await writeFile(join(dirname(destination), "THIRD_PARTY_NOTICES.md"), `# EVEING Clarune runtime dependencies\n\nThe original package LICENSE, COPYING, NOTICE and README files are preserved in the locations below.\nThe Sharp Windows package README includes the licenses of libvips and the bundled native libraries; versions.json records their versions.\n\n${[...notices.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, value]) => `- ${name}: ${value}`).join("\n")}\n`, "utf8");
+const parserNotice = "\n## Bundled parser adapter\n\nThe main bundle adapts douyin.ts from pwh-pwh/douyinVd, commit 6b8530817c0eb98217f37f291717abc6828f4a6b. MIT Copyright (c) 2025 coderpwh. Full license: licenses/douyinVd/LICENSE. Clarune replaces networking, validation, output types and logging; no Deno service is included.\n";
+const noticePath = join(dirname(destination), "THIRD_PARTY_NOTICES.md");
+await writeFile(noticePath, await readFile(noticePath, "utf8") + parserNotice, "utf8");
 console.log(JSON.stringify({ productionPackages: [...new Set(copied)].sort(), verifiedNotices: requiredNotices }, null, 2));

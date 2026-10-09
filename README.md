@@ -4,7 +4,9 @@ Clean-room Windows desktop application for local image editing and AI enhancemen
 **1.0.0-rc.1 adds offline device-bound activation and a complete offline installer pipeline.
 It is still a release candidate, not a commercially approved final release.**
 
-For a new computer or a future GitHub repository, start with
+The source is publicly viewable at https://github.com/0399199-stack/EVEING-Clarune,
+but the existing proprietary notice does not grant reuse or redistribution rights.
+For a new computer, start with
 [`docs/NEW_COMPUTER.md`](docs/NEW_COMPUTER.md),
 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) and
 [`docs/PUBLISHING.md`](docs/PUBLISHING.md). The repository does not include the
@@ -17,6 +19,14 @@ exports are checked in the main process. No production signing key is generated 
 
 ## Current scope
 
+- **Video parsing → Douyin watermark-free**: integrated metadata-only parsing,
+  explicit preview/download, galleries, batch input, a page-local download queue
+  and history. Uses the pinned MIT TypeScript adapter with an isolated, temporary
+  Electron public-page reader (no browser-profile import). One authorized video
+  passed real parsing, playback and file download; packaged video support is enabled.
+  Galleries remain disabled in packaged builds pending live validation.
+  See [`docs/VIDEO_PARSER.md`](docs/VIDEO_PARSER.md)
+  for supported links, privacy, recovery, license provenance and opt-in live tests.
 - Original Electron/React shell with secure renderer defaults.
 - Simplified Chinese and English resources with live switching.
 - Ice-blue/white glass interface, clean gradient background without scenery,
@@ -82,6 +92,10 @@ exports are checked in the main process. No production signing key is generated 
   prevent client patching, or remotely revoke a previously issued license.
 - The activation issuer is a separate internal deliverable; private signing
   keys are never part of this app or either source deliverable.
+- On startup, the app checks this public repository's GitHub Releases for a newer
+  version with a full Windows installer. With user action, it opens the official
+  GitHub asset download in the browser; it never silently installs an update.
+  No Release is published yet, so this flow is not an approved distribution.
 
 ## Commands
 

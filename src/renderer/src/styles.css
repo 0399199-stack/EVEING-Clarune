@@ -230,6 +230,16 @@ select:focus-visible {
   -webkit-app-region: no-drag;
 }
 
+.update-top-trigger {
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: var(--accent-strong);
+  background: var(--glass-control);
+  box-shadow: var(--shadow-control);
+  cursor: pointer;
+}
+
 .phase-pill,
 .pending-dot,
 .audit-badge,
@@ -1157,6 +1167,19 @@ select:focus-visible {
 
 .settings-card h2 {
   margin-bottom: 18px;
+}
+
+.update-card > p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 .settings-heading {

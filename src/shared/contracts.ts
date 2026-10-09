@@ -1,5 +1,7 @@
 import type { BatchJob, BatchProgress, BatchSummary, EnhancementJob, EnhancementProgress, ImageFormat, ImageJob, LargeEnhancement, PdfJob, ProcessedImage, SavedFile, ToolResult, UpscaleOptions, UpscaleStatus } from "./image-tools";
 import type { LicenseStatus } from "./license";
+import type { UpdateStatus } from "./updates";
+import type { VideoParserAPI } from "./video-parser";
 
 export const IPC_CHANNELS = {
   appInfo: "app:get-info",
@@ -15,7 +17,10 @@ export interface AppInfo {
 }
 
 export interface ClaruneAPI {
+  videoParser: VideoParserAPI;
   getAppInfo: () => Promise<AppInfo>;
+  checkUpdates: () => Promise<UpdateStatus>;
+  downloadUpdate: () => Promise<boolean>;
   getLicenseStatus: () => Promise<LicenseStatus>;
   activateLicense: (text: string) => Promise<LicenseStatus>;
   copyMachineCode: () => Promise<boolean>;

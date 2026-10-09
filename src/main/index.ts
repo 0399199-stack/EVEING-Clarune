@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell, protocol } from "electron";
 import { join, resolve } from "node:path";
 import { IPC_CHANNELS } from "../shared/contracts";
 import { createWindowOptions } from "../shared/window-options";
@@ -9,15 +9,32 @@ import { isDevelopmentShortcut } from "./release-shortcuts";
 import { createProductionLicenseService } from "./license/production";
 import { registerLicenseIpc } from "./license-ipc";
 import { ImageToolError } from "./image-tools/errors";
+import { UPDATE_CHANNELS } from "../shared/updates";
+import { UpdateService } from "./updates";
+import { registerVideoParser } from "./video-parser/ipc";
 
 let mainWindow: BrowserWindow | null = null;
 let imageTools: ImageToolsLifecycle;
+protocol.registerSchemesAsPrivileged([{ scheme: "clarune-media", privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true } }]);
 
 app.setName("EVEING Clarune");
 if (process.platform === "win32") app.setAppUserModelId("com.eveing.clarune");
 
 function registerIpc(): void {
+  const updates = new UpdateService();
+  ipcMain.handle(UPDATE_CHANNELS.check, (event) => {
+    if (!trustedFrame(event, mainWindow)) throw new Error("Untrusted IPC sender");
+    return updates.check(app.getVersion());
+  });
+  ipcMain.handle(UPDATE_CHANNELS.download, async (event) => {
+    if (!trustedFrame(event, mainWindow)) throw new Error("Untrusted IPC sender");
+    const url = updates.getDownloadUrl();
+    if (!url) return false;
+    await shell.openExternal(url);
+    return true;
+  });
   const license = createProductionLicenseService();
+  const videoParser = registerVideoParser(() => mainWindow, () => license.requireActive());
   const licenseIpc = registerLicenseIpc(() => mainWindow, license);
   ipcMain.handle(IPC_CHANNELS.appInfo, (event) => {
     if (!trustedFrame(event, mainWindow)) {
@@ -38,7 +55,7 @@ function registerIpc(): void {
   });
   imageTools = { requestOutputStop: () => {
     licenseIpc.stopAcceptingRequests();
-    return Promise.allSettled([outputLifecycle.requestOutputStop(), license.whenIdle()]).then(() => undefined);
+    return Promise.allSettled([outputLifecycle.requestOutputStop(), videoParser.shutdown(), license.whenIdle()]).then(() => undefined);
   } };
 }
 

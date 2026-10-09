@@ -1,4 +1,6 @@
+import { videoEn } from "./video-text";
 export const enUS = {
+  videoParser: videoEn,
   common: {
     appName: "EVEING Clarune",
     brandIntroName: "CLARUNE 澄像",
@@ -10,12 +12,14 @@ export const enUS = {
     workspaceGroup: "WORKSPACE",
     toolsGroup: "IMAGE TOOLS",
     appGroup: "APP",
+    videoParserGroup: "Video parsing",
     task: {
       title: "Active tasks", batch: "Processing batch", image: "Saving image", pdf: "Merging PDF", enhance: "AI upscaling",
       savingHint: "Saving locally. Closing will wait for the current file.", progress: "Task progress",
       return: "Back to task", stop: "Stop remaining", stopping: "Finishing current file…", stopFailed: "Could not request stop. Please retry.",
     },
     nav: {
+      douyin: "Douyin watermark-free",
       enhance: "AI Upscale",
       batch: "Batch",
       history: "History",
@@ -180,7 +184,9 @@ export const enUS = {
     metadata: "Preserve safe metadata",
     metadataBody: "Current exports remove EXIF and other metadata. Safe metadata retention is planned.",
     localOnly: "Network-free processing",
-    localOnlyBody: "Image editing, compression, PDF merging and AI upscaling run locally without uploads. The full installer bundles the AI runtime. Real-HAT requires a compatible NVIDIA GPU and system driver.",
+    localOnlyBody: "Image editing, compression, PDF merging and AI upscaling run locally without uploading images. Startup only checks GitHub for a new version; the full installer bundles the AI runtime.",
+    updates: "Software updates", updateChecking: "Checking GitHub for a new version…", updateAvailable: "Version {{version}} is available", checkUpdates: "Check again", downloadUpdate: "Download from GitHub", updatePrivacy: "Only public Releases are checked; no images or machine code are uploaded. Your browser handles the download, and you choose whether to install.",
+    updateStates: { idle: "Not checked yet", current: "You have the latest version", "no-release": "No downloadable release has been published yet", error: "Could not reach GitHub; try again later", opened: "Opened the GitHub download link in your browser.", downloadFailed: "Could not open the download link; try again." },
     about: "About",
     introLead: "Reimagine image detail with AI.",
     introBody: "Intelligent upscaling, denoising, sharpening and texture enhancement bring higher resolution and a more natural look to low-resolution images.",

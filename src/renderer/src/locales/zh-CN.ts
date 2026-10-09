@@ -1,4 +1,6 @@
+import { videoZh } from "./video-text";
 export const zhCN = {
+  videoParser: videoZh,
   common: {
     appName: "EVEING Clarune",
     brandIntroName: "CLARUNE 澄像",
@@ -10,12 +12,14 @@ export const zhCN = {
     workspaceGroup: "工作区",
     toolsGroup: "图片工具",
     appGroup: "应用",
+    videoParserGroup: "视频解析",
     task: {
       title: "全局任务状态", batch: "批量处理中", image: "正在保存图片", pdf: "正在合并 PDF", enhance: "AI 图片超清中",
       savingHint: "正在本地安全保存；关闭窗口会等待当前文件完成。", progress: "任务进度",
       return: "返回任务", stop: "停止后续", stopping: "等待当前文件完成…", stopFailed: "停止请求未成功，请重试。",
     },
     nav: {
+      douyin: "抖音去水印",
       enhance: "图片超清",
       batch: "批量",
       history: "历史",
@@ -180,7 +184,9 @@ export const zhCN = {
     metadata: "保留安全元数据",
     metadataBody: "当前导出移除 EXIF 等元数据；保留安全元数据为后续计划。",
     localOnly: "无网络处理",
-    localOnlyBody: "图片编辑、压缩、PDF 合并与 AI 超清均在本机运行，不上传图片。完整安装包内置 AI 环境；Real-HAT 需要兼容的 NVIDIA 显卡及系统驱动。",
+    localOnlyBody: "图片编辑、压缩、PDF 合并与 AI 超清均在本机运行，不上传图片。启动时仅向 GitHub 查询新版本；完整安装包内置 AI 环境。",
+    updates: "软件更新", updateChecking: "正在检查 GitHub 上的新版本…", updateAvailable: "发现新版 {{version}}", checkUpdates: "重新检查", downloadUpdate: "从 GitHub 下载", updatePrivacy: "仅查询公开 Release，不上传图片或机器码。下载由浏览器完成，安装需由你确认。",
+    updateStates: { idle: "尚未检查", current: "当前已是最新版", "no-release": "尚未发布可下载的正式版本", error: "暂时无法连接 GitHub，请稍后重试", opened: "已在浏览器打开 GitHub 下载链接。", downloadFailed: "未能打开下载链接，请稍后重试。" },
     about: "关于",
     introLead: "用 AI 重塑图像细节。",
     introBody: "智能放大、降噪、锐化与纹理增强，让低清图片获得更高分辨率与更自然的视觉表现。",

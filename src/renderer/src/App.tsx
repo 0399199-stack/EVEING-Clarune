@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import type { AppInfo } from "../../shared/contracts";
+import type { UpdateStatus } from "../../shared/updates";
 import { setLanguage, type SupportedLanguage } from "./i18n";
 import AboutCard from "./components/AboutCard";
 import LicenseDialog from "./components/LicenseDialog";
@@ -21,8 +22,9 @@ import OutputCompression from "./components/OutputCompression";
 import ParameterNumber from "./components/ParameterNumber";
 import { clearOutputHistory, getOutputHistory } from "./lib/output-history";
 import { useToolText } from "./locales/tool-text";
+import VideoParserPage from "./components/VideoParserPage";
+import { navigationGroups, toolPages, pageFromHash, pageRoute, type Page } from "../../shared/navigation";
 
-type Page = "enhance" | "batch" | "history" | "models" | "settings" | ToolId;
 type ThemeChoice = "system" | "light" | "dark";
 type DensityChoice = "comfortable" | "compact";
 type EnhancementTask = EnhancementProgress & { name: string; canceling: boolean };
@@ -35,12 +37,6 @@ interface SelectedImage {
   url: string;
 }
 
-const toolPages: ToolId[] = ["resize", "compress", "crop", "watermark", "round", "rotate", "flip", "pdf"];
-const navigationGroups: Array<{ title: string; items: Page[] }> = [
-  { title: "workspaceGroup", items: ["enhance", "batch"] },
-  { title: "toolsGroup", items: toolPages },
-  { title: "appGroup", items: ["history", "models", "settings"] },
-];
 
 function Icon({ name, size = 20 }: { name: string; size?: number }): ReactNode {
   const common = {
@@ -56,6 +52,8 @@ function Icon({ name, size = 20 }: { name: string; size?: number }): ReactNode {
   };
 
   switch (name) {
+    case "douyin":
+      return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></svg>;
     case "enhance":
       return <svg {...common}><path d="m12 3 1.5 4.2L18 9l-4.5 1.8L12 15l-1.5-4.2L6 9l4.5-1.8L12 3Z"/><path d="m5 14 .8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14Z"/><path d="m19 13 .7 1.8 1.8.7-1.8.7L19 18l-.7-1.8-1.8-.7 1.8-.7L19 13Z"/></svg>;
     case "batch":
@@ -107,8 +105,19 @@ function App(): ReactNode {
     "settings",
     "license",
   ]);
-  const [page, setPage] = useState<Page>("enhance");
+  const [page, setPage] = useState<Page>(() => pageFromHash(window.location.hash));
+  const [videoExpanded, setVideoExpanded] = useState(true);
+  useEffect(() => {
+    const restore = () => setPage(pageFromHash(window.location.hash));
+    window.addEventListener("hashchange", restore);
+    return () => window.removeEventListener("hashchange", restore);
+  }, []);
+  useEffect(() => {
+    window.history.replaceState(null, "", `#${pageRoute(page)}`);
+    if (page === "douyin") setVideoExpanded(true);
+  }, [page]);
   const [activeTool, setActiveTool] = useState<ToolId>("upscale");
+  useEffect(() => { if (toolPages.includes(page as ToolId)) setActiveTool(page as ToolId); }, [page]);
   const [studioTask, setStudioTask] = useState<StudioTask | null>(null);
   const [enhanceSaving, setEnhanceSaving] = useState(false);
   const [enhancementTask, setEnhancementTask] = useState<EnhancementTask | null>(null);
@@ -122,6 +131,9 @@ function App(): ReactNode {
   const [stopRequested, setStopRequested] = useState<string | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [licenseOpen, setLicenseOpen] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
+  const [updateNotice, setUpdateNotice] = useState("");
   useEffect(() => {
     const open = () => setLicenseOpen(true);
     window.addEventListener("clarune:license-required", open);
@@ -193,6 +205,20 @@ function App(): ReactNode {
   useEffect(() => {
     void window.clarune.getAppInfo().then(setAppInfo);
   }, []);
+
+  const checkUpdates = async (): Promise<void> => {
+    setUpdateChecking(true);
+    setUpdateNotice("");
+    try { setUpdateStatus(await window.clarune.checkUpdates()); }
+    catch { setUpdateStatus({ state: "error" }); }
+    finally { setUpdateChecking(false); }
+  };
+  useEffect(() => { void checkUpdates(); }, []);
+
+  const downloadUpdate = async (): Promise<void> => {
+    try { setUpdateNotice(await window.clarune.downloadUpdate() ? "opened" : "downloadFailed"); }
+    catch { setUpdateNotice("downloadFailed"); }
+  };
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -390,6 +416,7 @@ function App(): ReactNode {
           </div>
         </div>
         <div className="titlebar-actions">
+          {updateStatus?.state === "available" && <button className="update-top-trigger" type="button" onClick={() => setPage("settings")}>{t("settings:updateAvailable", { version: updateStatus.version })}</button>}
           <span className="phase-pill">{t("phase")}</span>
           <button className="license-trigger" type="button" onClick={() => setLicenseOpen(true)}>
             <Icon name="shield" size={17} />
@@ -402,8 +429,10 @@ function App(): ReactNode {
         <aside className="sidebar glass-panel">
           <nav className="sidebar-scroll" aria-label={t("navigationLabel")}>
             {navigationGroups.map((group) => <div key={group.title}>
-              <p className="nav-section-label">{t(group.title)}</p>
-              <NavigationGroup items={group.items} page={page} onNavigate={navigate} />
+              {group.collapsible ? <>
+                <button className="nav-section-label video-nav-toggle" type="button" aria-expanded={videoExpanded} aria-controls="video-parser-navigation" onClick={() => setVideoExpanded(value => !value)}>{t(group.title)}<span aria-hidden>{videoExpanded ? "⌃" : "⌄"}</span></button>
+                <div id="video-parser-navigation" hidden={!videoExpanded}><NavigationGroup items={group.items} page={page} onNavigate={navigate} /></div>
+              </> : <><p className="nav-section-label">{t(group.title)}</p><NavigationGroup items={group.items} page={page} onNavigate={navigate} /></>}
             </div>)}
           </nav>
           <button className="sidebar-brand-card" type="button" onClick={() => setPage("settings")} aria-label={t("aboutLink")}>
@@ -471,12 +500,18 @@ function App(): ReactNode {
             />
           </div>
           {page === "history" && <HistoryPage />}
+          {page === "douyin" && <VideoParserPage />}
           {page === "models" && <ModelsPage />}
           {page === "settings" && (
             <SettingsPage
               theme={theme}
               language={(i18n.resolvedLanguage === "en-US" ? "en-US" : "zh-CN")}
               appInfo={appInfo}
+              updateStatus={updateStatus}
+              updateChecking={updateChecking}
+              updateNotice={updateNotice}
+              onCheckUpdate={() => void checkUpdates()}
+              onDownloadUpdate={() => void downloadUpdate()}
               density={density}
               onDensity={setDensity}
               onTheme={setTheme}
@@ -729,13 +764,14 @@ function ModelsPage(): ReactNode {
   );
 }
 
-function SettingsPage({ theme, language, appInfo, density, onDensity, onTheme, onLanguage }: { theme: ThemeChoice; language: SupportedLanguage; appInfo: AppInfo; density: DensityChoice; onDensity: (density: DensityChoice) => void; onTheme: (theme: ThemeChoice) => void; onLanguage: (language: SupportedLanguage) => void }): ReactNode {
+function SettingsPage({ theme, language, appInfo, density, updateStatus, updateChecking, updateNotice, onCheckUpdate, onDownloadUpdate, onDensity, onTheme, onLanguage }: { theme: ThemeChoice; language: SupportedLanguage; appInfo: AppInfo; density: DensityChoice; updateStatus: UpdateStatus | null; updateChecking: boolean; updateNotice: string; onCheckUpdate: () => void; onDownloadUpdate: () => void; onDensity: (density: DensityChoice) => void; onTheme: (theme: ThemeChoice) => void; onLanguage: (language: SupportedLanguage) => void }): ReactNode {
   const { t } = useTranslation("settings");
   return (
     <div className="page"><PageIntro eyebrow={t("eyebrow")} title={t("title")} body={t("body")} />
       <div className="settings-grid">
         <section className="settings-card glass-panel"><h2>{t("appearance")}</h2><ControlGroup label={t("theme")}><Segmented values={["system", "light", "dark"]} value={theme} labels={{ system: t("system"), light: t("light"), dark: t("dark") }} onChange={(value) => onTheme(value as ThemeChoice)} /></ControlGroup><ControlGroup label={t("language")}><div className="segmented language"><button type="button" className={language === "zh-CN" ? "selected" : ""} onClick={() => onLanguage("zh-CN")}>{t("chinese")}</button><button type="button" className={language === "en-US" ? "selected" : ""} onClick={() => onLanguage("en-US")}>{t("english")}</button></div></ControlGroup><ControlGroup label={t("density")}><Segmented values={["comfortable", "compact"]} value={density} labels={{ comfortable: t("comfortable"), compact: t("compact") }} onChange={value => onDensity(value as DensityChoice)} /></ControlGroup><p className="settings-recovery-note">{t("recoveryPrivacy")}</p></section>
         <section className="settings-card glass-panel"><div className="settings-heading"><h2>{t("safety")}</h2><span className="audit-badge">{t("planned")}</span></div><SettingPlan title={t("noOverwrite")} body={t("noOverwriteBody")} /><SettingPlan title={t("metadata")} body={t("metadataBody")} /><SettingPlan title={t("localOnly")} body={t("localOnlyBody")} /></section>
+        <section className="settings-card glass-panel update-card" aria-labelledby="update-title"><h2 id="update-title">{t("updates")}</h2><p role="status">{updateChecking ? t("updateChecking") : updateStatus?.state === "available" ? t("updateAvailable", { version: updateStatus.version }) : t(`updateStates.${updateStatus?.state ?? "idle"}`)}</p><p className="settings-recovery-note">{t("updatePrivacy")}</p><div className="update-actions"><button type="button" className="text-button" disabled={updateChecking} onClick={onCheckUpdate}>{t("checkUpdates")}</button>{updateStatus?.state === "available" && <button type="button" className="primary-button" onClick={onDownloadUpdate}>{t("downloadUpdate")}</button>}</div>{updateNotice && <p className="settings-recovery-note" role="status">{t(`updateStates.${updateNotice}`)}</p>}</section>
         <AboutCard name={appInfo.name} version={appInfo.version} />
       </div>
     </div>

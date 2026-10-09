@@ -26,3 +26,17 @@ Before a release, also review `docs/PROJECT_STATUS.md`, `docs/RELEASE_GATES.md`,
 `docs/INSTALLATION.md` and `docs/PUBLISHING.md`. For a new development machine,
 follow `docs/NEW_COMPUTER.md`; external resources are listed in
 `docs/EXTERNAL_ASSETS.md`.
+
+Video parsing is an explicitly networked, user-initiated feature; see
+`docs/VIDEO_PARSER.md`. Keep metadata parsing separate from downloads. Media URLs
+stay in the main process; preserve host/DNS/redirect checks and the packaged-live-
+verification gate. Never add credentials, silent clipboard reads, third-party
+parsing sites or mock success to the production path. Downloads use the existing
+activation policy; no new global download center or material-library database.
+
+The user approved isolated browser parsing on 2026-10-09. Website scripts may run
+only in its temporary sandboxed Electron window, never as downloaded main-process
+code or engine updates. Do not import browser profiles/cookies or automate platform
+verification. Preserve the authenticated loopback tunnel with pinned public DNS,
+request allowlist and blocked media prefetch. Keep live gates per media type: a
+verified video must not imply that galleries have passed live tests.
