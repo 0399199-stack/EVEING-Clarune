@@ -4,6 +4,8 @@
 
 ## 当前应用依赖
 
+2026-10-10 候选包安全维护：Sharp 固定为 `0.35.5`，随包 Windows 原生库记录 librsvg `2.63.2`，处理 [GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w)。公告所述 RCE 条件针对 glibc Linux，不能据此声称 Windows 已证实同样可利用。构建依赖 source-map-js 固定为 `1.2.2`，处理 [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)，不随客户包分发。升级后完整 npm 依赖审计无已知告警；这不覆盖嵌入 Python、CUDA 或旧 NCNN 二进制的全部安全状态。
+
 2026-10-09 新增抖音元数据解析适配器，改编自
 [`pwh-pwh/douyinVd` 的 `douyin.ts`](https://github.com/pwh-pwh/douyinVd/blob/6b8530817c0eb98217f37f291717abc6828f4a6b/douyin.ts)，
 固定完整提交 `6b8530817c0eb98217f37f291717abc6828f4a6b`，MIT © 2025 coderpwh。

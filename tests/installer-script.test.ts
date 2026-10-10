@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const script = readFileSync(new URL("../tools/installer/clarune.iss", import.meta.url), "utf8");
+const packager = readFileSync(new URL("../tools/package-release.ps1", import.meta.url), "utf8");
+const previewPackager = readFileSync(new URL("../tools/package-preview.ps1", import.meta.url), "utf8");
 
 describe("installer directory validation source regressions", () => {
   it("only expands reviewed Inno directory constants", () => {
@@ -29,5 +31,23 @@ describe("installer directory validation source regressions", () => {
     for (const root of ["win", "commonpf32", "commonpf64"]) {
       expect(script).toContain(`Pos(AddBackslash(NormalPath(ExpandConstant('{${root}}'))), AddBackslash(Target)) = 1`);
     }
+  });
+});
+
+describe("release candidate packaging regressions", () => {
+  it("uses the package version in the candidate notice and preserves old installers", () => {
+    expect(packager).toContain("$candidateNotice.Replace('{VERSION}', $package.version)");
+    expect(packager).toContain("Refusing to overwrite an existing installer");
+    expect(packager).toContain("[string]$InstallerRevision = ''");
+    expect(packager).toContain("'1.0.0-rc.2'");
+  });
+
+  it("replaces only validated generated output before copying the new build", () => {
+    const remove = previewPackager.indexOf("Remove-Item -LiteralPath $previewOut -Recurse -Force");
+    const copy = previewPackager.indexOf("Copy-Item -LiteralPath (Join-Path $projectRoot 'out')");
+    expect(remove).toBeGreaterThan(previewPackager.indexOf("Unexpected compiled application target."));
+    expect(remove).toBeGreaterThan(previewPackager.indexOf("Compiled application staging is a link."));
+    expect(copy).toBeGreaterThan(remove);
+    expect(previewPackager).not.toMatch(/Remove-Item[^\r\n]+resources\/ai/);
   });
 });

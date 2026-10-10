@@ -1,7 +1,7 @@
 # EVEING Clarune
 
 Clean-room Windows desktop application for local image editing and AI enhancement.
-**1.0.0-rc.1 adds offline device-bound activation and a complete offline installer pipeline.
+**1.0.0-rc.2 includes offline device-bound activation, video parsing and a complete offline installer pipeline.
 It is still a release candidate, not a commercially approved final release.**
 
 The source is publicly viewable at https://github.com/0399199-stack/EVEING-Clarune,

@@ -1,6 +1,9 @@
 allowBuilds:
   electron: true
   esbuild: true
+overrides:
+  # GHSA-68fv-2mgg-jv7q; patched build-time source map reader.
+  source-map-js: 1.2.2
 minimumReleaseAgeExclude:
   - '@types/node@24.13.5'
   - '@vitest/mocker@5.0.1'

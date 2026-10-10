@@ -6,12 +6,15 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const project = resolve(import.meta.dirname, '..');
+const version = JSON.parse(await readFile(join(project, 'package.json'), 'utf8')).version;
 const workspace = resolve(project, '../..');
 const output = resolve(project, '../EVEINGClarune_Installer');
-const installer = join(output, 'EVEING-Clarune-1.0.0-rc.1-Full-x64-Setup-fix1.exe');
+const installer = join(output, `EVEING-Clarune-${version}-Full-x64-Setup${version === '1.0.0-rc.1' ? '-fix1' : ''}.exe`);
 const evidence = JSON.parse(await readFile(installer.replace(/\.exe$/, '.evidence.json'), 'utf8'));
 const expectedFingerprint = '7b5820e3f82944f0358d0143231d61dcad815c48efd9d196184ccb2c46a69c5d';
-const testApp = join(workspace, 'work/full-installer-review/run-6qT644/extracted/{app}');
+if (!process.env.CLARUNE_VERIFIED_TEST_APP) throw new Error('Set CLARUNE_VERIFIED_TEST_APP to this version\'s successfully tested extracted application directory.');
+const testApp = resolve(process.env.CLARUNE_VERIFIED_TEST_APP);
+assert.equal(JSON.parse(await readFile(join(testApp, 'resources/app/package.json'), 'utf8')).version, version);
 const review = resolve(project, '../EVEINGClarune_Release_Review');
 await mkdir(review, { recursive: true });
 const extracted = await mkdtemp(join(workspace, 'work/owner-installer-'));
@@ -29,7 +32,8 @@ check('Archive extractor is the verified 2.71.1 binary', await sha256(unpacker) 
 console.log('Extracting selected release metadata and application code without executing setup');
 const extraction = spawnSync(unpacker, ['-x', '-b', '-q', '-a', `-d${extracted}`, installer,
   '{app}\\resources\\license-public-key.pem', '{app}\\clarune-installation.ini',
-  '{app}\\resources\\ai\\runtime-manifest.json', '{app}\\resources\\app\\out\\*'],
+  '{app}\\resources\\ai\\runtime-manifest.json', '{app}\\resources\\app\\out\\*',
+  '{app}\\resources\\app\\package.json', '{app}\\resources\\app\\node_modules\\sharp\\package.json'],
 { windowsHide: true, shell: false, timeout: 180000, encoding: 'utf8', maxBuffer: 1024 * 1024 });
 assert.equal(extraction.status, 0, extraction.error?.message || extraction.stderr || extraction.stdout);
 const app = join(extracted, '{app}');
@@ -40,6 +44,8 @@ const fingerprint = createHash('sha256').update(key.export({ type: 'spki', forma
 check('Archived Ed25519 public key matches the owner-supplied key', key.asymmetricKeyType === 'ed25519' && fingerprint === expectedFingerprint);
 const marker = await readFile(join(app, 'clarune-installation.ini'), 'utf8');
 check('Actual archive contains the customer installation identifier, not the test identifier', marker.includes('AppId=com.eveing.clarune.desktop') && !marker.includes('installer-test'));
+check('Archived application version matches this release candidate', JSON.parse(await readFile(join(app, 'resources/app/package.json'), 'utf8')).version === version);
+check('Archived image dependency is the patched Sharp version', JSON.parse(await readFile(join(app, 'resources/app/node_modules/sharp/package.json'), 'utf8')).version === '0.35.5');
 check('Customer AI manifest matches the fully verified test installer', await sha256(join(app, 'resources/ai/runtime-manifest.json')) === await sha256(join(testApp, 'resources/ai/runtime-manifest.json')));
 let codeFiles = 0;
 async function compareCode(relative = 'resources/app/out') {
@@ -51,7 +57,7 @@ async function compareCode(relative = 'resources/app/out') {
 }
 await compareCode();
 check('Archived application code is identical to the packaged version that passed real model and activation tests', codeFiles >= 5);
-await writeFile(join(review, 'production-installer-verification-fix1.json'), JSON.stringify({ verifiedAt: new Date().toISOString(), installer,
+await writeFile(join(review, `production-installer-verification-${version}.json`), JSON.stringify({ verifiedAt: new Date().toISOString(), installer,
   installerBytes: evidence.bytes, installerSha256: evidence.installerSha256, publicKeyFingerprint: fingerprint,
   extracted, codeFiles, checks, passed: checks.length, setupExecuted: false, publisherCodeSigned: false }, null, 2));
 console.log(JSON.stringify({ passed: checks.length, codeFiles, extracted }));

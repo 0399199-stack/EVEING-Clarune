@@ -2,8 +2,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$PublicKeyPem,
-    [ValidatePattern('^fix[1-9][0-9]*$')]
-    [string]$InstallerRevision = 'fix1',
+    [ValidatePattern('^(fix[1-9][0-9]*)?$')]
+    [string]$InstallerRevision = '',
     [switch]$CompileOnly,
     [switch]$TestOnly
 )
@@ -20,9 +20,11 @@ $definition = Join-Path $PSScriptRoot 'installer/clarune.iss'
 $vcRedist = Join-Path $stageRoot 'Prerequisites/vc_redist.x64.exe'
 $vcLicense = Join-Path $stageRoot 'Prerequisites/Microsoft-VC-v14-License.docx'
 $package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json
-if ($package.version -ne '1.0.0-rc.1') { throw 'This installer pipeline is limited to the reviewed 1.0.0-rc.1 release candidate.' }
-$installerName = if ($TestOnly) { "TEST-ONLY-EVEING-Clarune-$($package.version)-Full-x64-Setup-$InstallerRevision" } else { "EVEING-Clarune-$($package.version)-Full-x64-Setup-$InstallerRevision" }
-$installerBuildNumber = [int]$InstallerRevision.Substring(3) + 1
+if ($package.version -notin @('1.0.0-rc.1', '1.0.0-rc.2')) { throw 'This installer pipeline is limited to the reviewed release candidates.' }
+if ($package.version -eq '1.0.0-rc.1' -and -not $InstallerRevision) { $InstallerRevision = 'fix1' }
+$revisionSuffix = if ($InstallerRevision) { "-$InstallerRevision" } else { '' }
+$installerName = if ($TestOnly) { "TEST-ONLY-EVEING-Clarune-$($package.version)-Full-x64-Setup$revisionSuffix" } else { "EVEING-Clarune-$($package.version)-Full-x64-Setup$revisionSuffix" }
+$installerBuildNumber = if ($package.version -eq '1.0.0-rc.2') { 4 } else { [int]$InstallerRevision.Substring(3) + 1 }
 $installerFile = Join-Path $installerRoot "$installerName.exe"
 $installerAppId = if ($TestOnly) { 'com.eveing.clarune.installer-test' } else { 'com.eveing.clarune.desktop' }
 $directoryName = if ($TestOnly) { 'EVEING Clarune TEST-ONLY' } else { 'EVEING Clarune' }
@@ -154,7 +156,7 @@ Write-Utf8 (Join-Path $stageRoot 'Prerequisites/README.txt') "Microsoft Visual C
 Write-Utf8 (Join-Path $stageRoot 'resources/license-public-key.pem') $key.pem
 Write-Utf8 (Join-Path $stageRoot 'clarune-installation.ini') "[Installation]`nAppId=$installerAppId`nVersion=$($package.version)`n"
 $candidateNotice = @'
-EVEING Clarune 1.0.0-rc.1 — 完整离线安装候选版
+EVEING Clarune {VERSION} — 完整离线安装候选版
 
 本版本用于安装、升级、卸载、离线激活和 GPU 兼容性验证，尚不标记为可正式商售。
 包含通用、动漫及 Real-HAT 模型与运行环境。不会联网下载依赖；显卡驱动不包含在内。
@@ -173,6 +175,7 @@ THIRD_PARTY_NOTICES.md、resources/app/THIRD_PARTY_NOTICES.md 及 resources/ai/l
 此安装包未进行发行者代码签名，Windows 可能显示未知发布者或信誉提示。
 请在正式收费前完成最终许可审查、GPU/安装回归和发布签名决策。
 '@
+$candidateNotice = $candidateNotice.Replace('{VERSION}', $package.version)
 if ($TestOnly) { $candidateNotice = "TEST-ONLY / 仅自动化安装验证，不得交付客户或用于商业签发。`n本安装器使用隔离测试应用标识及测试目录。`n`n" + $candidateNotice }
 Write-Utf8 (Join-Path $stageRoot 'RELEASE_CANDIDATE_NOTICE.txt') $candidateNotice
 

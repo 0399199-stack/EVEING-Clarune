@@ -4,10 +4,12 @@ import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { access, mkdir, mkdtemp, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const project = resolve(import.meta.dirname, '..');
+const version = JSON.parse(await readFile(join(project, 'package.json'), 'utf8')).version;
+const installTest = process.argv.includes('--install');
 const workspace = resolve(project, '../..');
 const require = createRequire(join(project, 'package.json'));
 const { _electron } = require(process.env.CLARUNE_PLAYWRIGHT_MODULE || 'playwright');
@@ -24,9 +26,12 @@ assert.ok(systemRoot, 'Windows SystemRoot must be available');
 const systemOnlyPath = [join(systemRoot, 'System32'), systemRoot, join(systemRoot, 'System32/Wbem')].join(';');
 const pwsh = process.env.CLARUNE_POWERSHELL_EXE || 'C:/Users/15168/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe';
 const unpacker = join(work, 'installer-tools/innounp-latest/innounp.exe');
-const fixedInstaller = join(work, 'release-installer-test/TEST-ONLY-EVEING-Clarune-1.0.0-rc.1-Full-x64-Setup-fix1.exe');
+const fixedInstaller = join(work, `release-installer-test/TEST-ONLY-EVEING-Clarune-${version}-Full-x64-Setup${version === '1.0.0-rc.1' ? '-fix1' : ''}.exe`);
 const fixedEvidence = fixedInstaller.replace(/\.exe$/, '.evidence.json');
 const installer = join(run, basename(fixedInstaller));
+const stage = resolve(project, '../EVEINGClarune_ReleaseCandidate');
+const savedStageFiles = await Promise.all(['resources/license-public-key.pem', 'clarune-installation.ini', 'RELEASE_CANDIDATE_NOTICE.txt']
+  .map(async name => ({ file: join(stage, name), bytes: await readFile(join(stage, name)) })));
 const checks = [], models = [], errors = [], sensitive = [];
 const report = { createdAt: new Date().toISOString(), run, checks, models, errors, installationExecuted: false,
   systemRedistributableExecuted: false, privateKeyPersisted: false,
@@ -86,7 +91,7 @@ async function launchApp() {
   check('Extracted exe is the real packaged application', paths.packaged && samePath(paths.exe, executablePath));
   check('Packaged resources and application paths resolve only inside extraction', samePath(paths.resources, join(applicationDirectory, 'resources')) && samePath(paths.app, join(applicationDirectory, 'resources/app')));
   check('Single-instance isolation uses the explicit disposable userData', samePath(paths.profile, profile));
-  check('Packaged app has expected candidate version and system-only PATH', paths.version === '1.0.0-rc.1' && paths.path === systemOnlyPath);
+  check('Packaged app has expected candidate version and system-only PATH', paths.version === version && paths.path === systemOnlyPath);
   await page.getByTestId('enhance-model').waitFor();
   const renderedFile = fileURLToPath(page.url());
   check('Renderer is a packaged file URL, not a developer server', page.url().startsWith('file:') && beneath(join(applicationDirectory, 'resources/app/out/renderer'), renderedFile));
@@ -240,6 +245,43 @@ try {
   check('Closing and relaunching the extracted app preserves active authorization', restored.state === 'active' && restored.licenseId === claims.license_id);
   check('Restart launches no inference automatically', (await app.evaluate(() => globalThis.__fullQa.processes)).every((entry) => !entry.inference));
   check('No renderer exceptions occurred', errors.length === 0);
+  await closeApp();
+  if (installTest) {
+    // Use a distinct test AppId and a new empty directory; never touch the owner's installed app.
+    const testRegistry = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\com.eveing.clarune.installer-test_is1';
+    const registryBefore = spawnSync(join(systemRoot, 'System32/reg.exe'), ['query', testRegistry], { windowsHide: true, encoding: 'utf8' });
+    assert.equal(registryBefore.status, 1, 'A previous test installation exists or registry state could not be checked; stop rather than replace it.');
+    const installDirectory = join(run, 'EVEING Clarune TEST-ONLY');
+    const setupArgs = ['/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/NOICONS', '/TASKS=', `/DIR=${installDirectory}`];
+    await runProcess('install-isolated-TEST-ONLY-package', installer, [...setupArgs, `/LOG=${join(run, 'setup.log')}`], 'setup-process.log');
+    report.installationExecuted = true;
+    const marker = await readFile(join(installDirectory, 'clarune-installation.ini'), 'utf8');
+    check('Installed application has only the isolated test identity', marker.includes('AppId=com.eveing.clarune.installer-test'));
+    const installedManifest = JSON.parse(await readFile(join(installDirectory, 'resources/ai/runtime-manifest.json'), 'utf8'));
+    for (const entry of installedManifest.files) {
+      const file = resolve(installDirectory, 'resources/ai', entry.path);
+      assert.ok(beneath(join(installDirectory, 'resources/ai'), file));
+      assert.equal(await sha256(file), entry.sha256, `Installed AI integrity: ${entry.path}`);
+    }
+    check('Actually installed AI payload matches every manifest hash', installedManifest.files.length === packaging.aiFileCount);
+    applicationDirectory = installDirectory;
+    await launchApp();
+    check('Actually installed application starts and keeps isolated activation', (await page.evaluate(() => window.clarune.getLicenseStatus())).state === 'active');
+    await closeApp();
+    const userSentinel = join(installDirectory, 'user-created-keep.txt');
+    await writeFile(userSentinel, 'User-created content must survive reinstall and uninstall.', { flag: 'wx' });
+    const activationBefore = await readFile(join(profile, 'activation-state.bin'));
+    await runProcess('reinstall-isolated-TEST-ONLY-package', installer, [...setupArgs, `/LOG=${join(run, 'reinstall.log')}`], 'reinstall-process.log');
+    report.sameVersionReinstallExecuted = true;
+    check('Same-version reinstall retains user-created content', (await readFile(userSentinel, 'utf8')).startsWith('User-created'));
+    await runProcess('uninstall-isolated-TEST-ONLY-package', join(installDirectory, 'unins000.exe'), ['/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', `/LOG=${join(run, 'uninstall.log')}`], 'uninstall-process.log');
+    report.uninstallationExecuted = true;
+    await assert.rejects(access(join(installDirectory, 'EVEING Clarune.exe')), { code: 'ENOENT' });
+    check('Uninstall removes registered application but preserves user files and activation',
+      (await readFile(userSentinel, 'utf8')).startsWith('User-created') && activationBefore.equals(await readFile(join(profile, 'activation-state.bin'))));
+    check('Test uninstall registration is removed', spawnSync(join(systemRoot, 'System32/reg.exe'), ['query', testRegistry], { windowsHide: true }).status === 1);
+    report.scope = 'Archive-extracted application, three real models, isolated TEST-ONLY Windows installation, same-version reinstall and uninstall. Existing owner installation untouched. Clean Windows, missing-VC and cross-version upgrade remain unverified.';
+  }
   report.complete = true;
 } catch (error) {
   report.complete = false; report.failure = sanitize(error?.message || error);
@@ -247,9 +289,11 @@ try {
   process.exitCode = 1;
 } finally {
   if (app) await closeApp().catch((error) => { errors.push(sanitize(error?.message || error)); report.complete = false; process.exitCode = 1; });
+  for (const saved of savedStageFiles) await writeFile(saved.file, saved.bytes);
+  report.productionStageIdentityRestored = true;
   privateKey = null; publicKey = null;
   report.passed = checks.length;
   await writeFile(join(run, 'results.json'), sanitize(JSON.stringify(report, null, 2)));
   console.log(JSON.stringify({ complete: report.complete, passed: checks.length, models: models.length, run, installer: report.installer, failure: report.failure,
-    note: 'Archive-extracted packaged application test only; Windows installer/uninstaller and VC redistributable were not executed.' }, null, 2));
+    note: report.scope }, null, 2));
 }

@@ -2,7 +2,7 @@
 
 源码仓库：`https://github.com/0399199-stack/EVEING-Clarune`，**公开可查看**，`main` 分支已上传。公开不等于开放使用许可；现有 `LICENSE.md` 仍保留所有权，不授权再分发。本次没有发布 Release 或安装包。不要从源码仓库的上级 `outputs` 或 Codex 工作目录执行上传。
 
-`package.json` 当前版本 `1.0.0-rc.1`，本机完整安装候选包修订为 `fix2`。`fix2` 是同一版本的安装包修订，不等于正式稳定版。程序启动时查询本仓库的公开 GitHub Releases；发现更高版本和唯一的完整 x64 安装包后提示用户，点击后由浏览器从 GitHub 下载。当前没有 Release，因此不会显示虚假的可下载版本，也不会自动安装。
+`package.json` 当前本地版本 `1.0.0-rc.2`，完整候选安装包为 `EVEING-Clarune-1.0.0-rc.2-Full-x64-Setup.exe`，包含全部三套模型与环境。旧 `rc.1-fix2` 保留。候选包不等于正式稳定版；本机测试结果和未通过项见 `PROJECT_STATUS.md`。程序启动时查询本仓库的公开 GitHub Releases；发现更高版本和唯一的完整 x64 安装包后提示用户，点击后由浏览器从 GitHub 下载。当前尚未发布候选安装包，不会自动安装更新。
 
 ## 上传源码前
 

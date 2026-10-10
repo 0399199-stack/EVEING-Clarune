@@ -1,6 +1,6 @@
 {
   "name": "eveing-clarune",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "private": true,
   "description": "EVEING Clarune clean-room Windows image enhancement desktop app",
   "main": "./out/main/index.js",
@@ -21,7 +21,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-i18next": "17.0.14",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@types/node": "24.13.5",

@@ -59,6 +59,18 @@ foreach ($item in Get-ChildItem -LiteralPath (Join-Path $runtimeRoot 'resources'
     if ($item.Name -eq 'default_app.asar') { continue }
     Copy-Item -LiteralPath $item.FullName -Destination $previewResources -Recurse -Force
 }
+$previewOut = [IO.Path]::GetFullPath((Join-Path $previewApp 'out'))
+if ($previewOut -ne [IO.Path]::GetFullPath((Join-Path $previewRoot 'resources/app/out'))) {
+    throw 'Unexpected compiled application target.'
+}
+foreach ($parent in @($previewRoot, $previewResources, $previewApp)) {
+    if ((Get-Item -LiteralPath $parent).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked application staging paths are not allowed.' }
+}
+if (Test-Path -LiteralPath $previewOut) {
+    if (Get-ChildItem -LiteralPath $previewOut -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) { throw 'Compiled application staging contains a link.' }
+    if ((Get-Item -LiteralPath $previewOut).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Compiled application staging is a link.' }
+    Remove-Item -LiteralPath $previewOut -Recurse -Force
+}
 Copy-Item -LiteralPath (Join-Path $projectRoot 'out') -Destination $previewApp -Recurse -Force
 $previewBrandParent = Join-Path $previewApp 'resources'
 New-Item -ItemType Directory -Force -Path $previewBrandParent | Out-Null
